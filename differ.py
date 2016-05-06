@@ -17,16 +17,19 @@ def match_ms(m1, m2):
         print s.ratio()
         print m1[i], m2[j]
         if s.ratio() > thresh_ratio:
-            i += 1
-            j += 1
+            i += 1, j += 1
         else:
-            i, j = find_next_match(m1, m2, i, j)
+            ii, jj = find_next_match(m1, m2, i, j)
+            if ii, jj == -1, -1:
+                i += 1, j += 1
+            i, j = ii, jj
 
 
 def find_next_match(m1, m2, i, j):
     # assume next matching line will be in a 100 line window
     window = 100
     best_ratio = 0
+    best_match = (-1, -1)
     
     for ii in range(i, i + 100):
         s = difflib.SequenceMatcher(junk_chars, m1[ii], m2[j])
