@@ -61,8 +61,8 @@ char_replace = {
     u'\u00f2': 'o', u'\u00f3': 'o', u'\u00f4': 'o', u'\u00f5': 'o', u'\u00f6': 'o',
     u'\u00f9': 'u', u'\u00fa': 'u', u'\u00fb': 'u', u'\u00fc': 'u',
     u'\u2010': ' ', u'\u2011': ' ', u'\u2012': ' ', u'\u2013': ' ', u'\u2014': ' ', u'\u2015': ' ',
-    u'\u2234': ' ', u'\u2235': ' ', u'\u00b6': ' ',
-    '&': 'and'
+    u'\u2234': ' ', u'\u2235': ' ', u'\u00b6': ' ', u'\u00b7': ' ', u'\u00b8': ' ',
+    '&': 'and', '\n': ' '
     }
 
 for c in string.punctuation:
@@ -78,7 +78,7 @@ def read_poetry(dir, texts):
             lines = tree.xpath('//div[@class="line"]')
             with open(dir + m + '.txt', 'wb') as f:
                 for line in lines:
-                    f.write(parse_line(line).encode('utf-8'))
+                    f.write(parse_line(line, parse_text_poetry).encode('utf-8'))
                     f.write('\n')
             print m + ' parsed!'
 
@@ -92,8 +92,7 @@ def read_prose(dir, texts):
             lines = tree.xpath('//p')
             with open(dir + m + '.txt', 'wb') as f:
                 for line in lines:
-                    txts = parse_line(line)
-                    print txts
+                    txts = parse_line(line, parse_text_prose)
                     for t in txts:
                         f.write(t.encode('utf-8'))
                         f.write('\n')
@@ -113,7 +112,27 @@ def remove_annotations(line):
     return ret
 
 
-def parse_line(line):
+def parse_text_poetry(txt):
+    txt = remove_annotations(txt)
+    txt = ''.join(ch for ch in txt if ch not in string.digits)
+    for o, n in char_replace.items():
+        txt = txt.replace(o, n)
+    return txt
+
+
+def parse_text_prose(txt):
+    txt = remove_annotations(txt)
+    txts = re.split('[./] (?=[A-Z])', txt)
+    for i, t in enumerate(txts):
+        t = ''.join(ch for ch in t if ch not in string.digits)
+        for o, n in char_replace.items():
+            t = t.replace(o, n)
+        txts[i] = t
+
+    return txts
+
+
+def parse_line(line, txt_parser=parse_text_poetry):
     txt = line.text or ''
     for child in line.iterchildren():
         if child.tag == 'sup':
@@ -124,19 +143,7 @@ def parse_line(line):
         if child.tail:
             txt += child.tail
 
-    return parse_text(txt)
-
-
-def parse_text(txt):
-    txt = remove_annotations(txt)
-    txts = re.split('[./] (?=[A-Z])', txt)
-    for i, t in enumerate(txts):
-        t = ''.join(ch for ch in t if ch not in string.digits)
-        for o, n in char_replace.items():
-            t = t.replace(o, n)
-        txts[i] = t
-
-    return txts
+    return txt_parser(txt)
 
 
 read_poetry('manuscripts/', manuscripts)
